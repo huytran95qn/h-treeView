@@ -1,0 +1,38 @@
+<cdk-virtual-scroll-viewport itemSize="50">
+  <div class="h-treeView__droplist">
+    <ng-container *hVirtualFor="let item of items">
+      <ng-container *ngTemplateOutlet="hTreeItemTemplate; context: { item: item }"></ng-container>
+    </ng-container>
+  </div>
+</cdk-virtual-scroll-viewport>
+
+<ng-template #hTreeItemTemplate let-item="item">
+  <li class="h-treeView-item"
+    [ngClass]="{
+      'active': item.isSelected,
+      'disabled': item.disabled
+    }"
+    [ngStyle]="{
+      '--level': item.level
+    }">
+    <div class="h-treeView-item__toggler" (click)="toggle(item)">
+      <ng-container *ngTemplateOutlet="toggleRef; context: { item: item }"></ng-container>
+    </div>
+
+    <div class="h-treeView-item__item">
+      {{ item.label }}
+    </div>
+  </li>
+</ng-template>
+
+<ng-template #toggleRef let-item="item">
+  <ng-container *ngIf="item?.children?.length">
+    <ng-container *ngIf="item.expanded">
+      <mat-icon aria-hidden="false" fontIcon="arrow_drop_down"></mat-icon>
+    </ng-container>
+
+    <ng-container *ngIf="!item.expanded">
+      <mat-icon aria-hidden="false" fontIcon="arrow_right"></mat-icon>
+    </ng-container>
+  </ng-container>
+</ng-template>
