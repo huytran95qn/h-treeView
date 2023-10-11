@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { HTreeViewItem } from './models/h-treeView.model';
-import { toggleExpandOrCollapse } from './utils/utils';
+import { HTreeViewService } from './services/h-treeView.service';
 
 @Component({
   selector: 'lib-h-treeView',
@@ -15,9 +15,13 @@ export class HTreeViewComponent<T> {
 
   items: HTreeViewItem<T>[] = [];
 
+  constructor(
+    private _hTreeViewService: HTreeViewService<T>
+  ) {}
+
   toggle(item: HTreeViewItem<T>): void {
     if (item.children) {
-      toggleExpandOrCollapse(item);
+      this._hTreeViewService.toggle(item);
     }
   }
 }

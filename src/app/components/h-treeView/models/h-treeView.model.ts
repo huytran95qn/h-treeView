@@ -18,8 +18,6 @@ interface IHTreeItem<T> {
   visible?: boolean;
 
   styleClass?: string;
-  
-  totalChildren?: number;
 }
 
 export class HTreeViewItem<T> implements IHTreeItem<T> {
@@ -41,8 +39,6 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
 
   styleClass: string = '';
 
-  totalChildren: number = 0;
-
   constructor(data: IHTreeItem<T>) {
     if(data) {
       this.uid = data.uid || v4();
@@ -54,10 +50,5 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
       this.styleClass = data.styleClass || '';
       this.visible = true;
     }
-  }
-
-  public setTotalChildren(): void {
-    this.totalChildren = this.children.length;
-    this.children.forEach(child => this.totalChildren += child.totalChildren);
   }
 }

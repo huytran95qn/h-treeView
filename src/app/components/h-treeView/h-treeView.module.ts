@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 
 import { HTreeViewComponent } from './h-treeView.component';
-import { HVirtualFor } from './directives/h-virtual-for-of.directive';
+import { HTreeViewService } from './services/h-treeView.service';
 import { HTreeViewVirtualFor } from './directives/h-treeView-virtual-for-of.directive';
 
 const COMPONENTS = [
@@ -32,6 +32,9 @@ const COMMON_MODULES = [
   exports: [
     HTreeViewComponent,
     HTreeViewVirtualFor
+  ],
+  providers: [
+    HTreeViewService
   ]
 })
 export class HTreeViewModule { }

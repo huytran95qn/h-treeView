@@ -13,7 +13,7 @@
       'disabled': item.disabled
     }"
     [ngStyle]="{
-      '--level': item.level
+      '--level': item.level - 1
     }">
     <div class="h-treeView-item__toggler" (click)="toggle(item)">
       <ng-container *ngTemplateOutlet="toggleRef; context: { item: item }"></ng-container>

@@ -44,13 +44,13 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   readonly viewChange = new Subject<ListRange>();
 
   /** Subject that emits when a new DataSource instance is given. */
-  private readonly _dataSourceChanges = new Subject<DataSource<T>>();
+  private readonly dataSourceChanges = new Subject<DataSource<T>>();
 
   /** The DataSource to display. */
   @Input('hVirtualForOf')
   set setHVirtualFor(value: T[] | null | undefined) {
     this.hVirtualFor = value;
-    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(value))));
+    this.dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(value))));
   }
 
   hVirtualFor: T[] | null | undefined = [];
@@ -89,7 +89,7 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   }
 
   /** Emits whenever the data in the current DataSource changes. */
-  readonly dataStream: Observable<readonly T[]> = this._dataSourceChanges.pipe(
+  readonly dataStream: Observable<readonly T[]> = this.dataSourceChanges.pipe(
     startWith(null),
     pairwise(),
     switchMap(([prev, cur]) => this._changeDataSource(prev, cur)),
@@ -125,14 +125,14 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   ) {
     this.dataStream.subscribe(data => {
       this._nodes = data;
-      this._onRenderedDataChange();
+      this.onRenderedDataChange();
     });
     this._viewport.renderedRangeStream.pipe(takeUntil(this._destroyed)).subscribe(range => {
       this._renderedRange = range;
       if (this.viewChange.observers.length) {
         ngZone.run(() => this.viewChange.next(this._renderedRange));
       }
-      this._onRenderedDataChange();
+      this.onRenderedDataChange();
     });
     this._viewport.attach(this);
   }
@@ -205,14 +205,16 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   ngOnDestroy() {
     this._viewport.detach();
 
-    this._dataSourceChanges.next(undefined!);
-    this._dataSourceChanges.complete();
+    this.dataSourceChanges.next(undefined!);
+    this.dataSourceChanges.complete();
     this.viewChange.complete();
 
     this._destroyed.next();
     this._destroyed.complete();
     this._viewRepeater.detach();
   }
+
+  initialCount: number = 0;
 
   abstract getItemsLength(items: T[] | null | undefined): number;
 
@@ -223,12 +225,12 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   ): T[];
 
   /** React to scroll state changes in the viewport. */
-  // count: number = 0;
-  private _onRenderedDataChange() {
+  public onRenderedDataChange() {
     if (!this._renderedRange) {
       return;
     }
 
+    this.initialCount = 0;
     this._renderedItems = this.serializeNodes(
       this.hVirtualFor as T[],
       this._renderedRange
