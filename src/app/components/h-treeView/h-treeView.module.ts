@@ -5,6 +5,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 
 import { HTreeViewComponent } from './h-treeView.component';
 import { HVirtualFor } from './directives/h-virtual-for-of.directive';
+import { HTreeViewVirtualFor } from './directives/h-treeView-virtual-for-of.directive';
 
 const COMPONENTS = [
   HTreeViewComponent,
@@ -22,7 +23,7 @@ const COMMON_MODULES = [
 @NgModule({
   declarations: [
     ...COMPONENTS,
-    HVirtualFor
+    HTreeViewVirtualFor
   ],
   imports: [
     ...MATERIAL_MODULES,
@@ -30,7 +31,7 @@ const COMMON_MODULES = [
   ],
   exports: [
     HTreeViewComponent,
-    HVirtualFor
+    HTreeViewVirtualFor
   ]
 })
 export class HTreeViewModule { }

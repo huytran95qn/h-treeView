@@ -2,13 +2,13 @@ import {
   ArrayDataSource,
   DataSource,
   ListRange,
-  isDataSource,
   _RecycleViewRepeaterStrategy,
   _VIEW_REPEATER_STRATEGY,
   _ViewRepeaterItemInsertArgs,
 } from '@angular/cdk/collections';
 import {
   Directive,
+  DoCheck,
   EmbeddedViewRef,
   Inject,
   Input,
@@ -16,53 +16,19 @@ import {
   IterableChanges,
   IterableDiffer,
   IterableDiffers,
-  NgIterable,
   NgZone,
+  OnDestroy,
   SkipSelf,
   TemplateRef,
   TrackByFunction,
   ViewContainerRef,
 } from '@angular/core';
-import { NumberInput, coerceNumberProperty} from '@angular/cdk/coercion';
-import { Observable, Subject, of as observableOf, isObservable } from 'rxjs';
+import { NumberInput, coerceNumberProperty } from '@angular/cdk/coercion';
+import { Observable, Subject, of as observableOf } from 'rxjs';
 import { pairwise, shareReplay, startWith, switchMap, takeUntil } from 'rxjs/operators';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-import { HTreeViewItem } from '../models/h-treeView.model';
-
-/** The context for an item rendered by `CdkVirtualForOf` */
-export type HVirtualForOfContext<T> = {
-  /** The item value. */
-  $implicit: T;
-  /** The DataSource, Observable, or NgIterable that was passed to *cdkVirtualFor. */
-  hVirtualFor: DataSource<T> | Observable<T[]> | NgIterable<T>;
-  /** The index of the item in the DataSource. */
-  index: number;
-  /** The number of items in the DataSource. */
-  count: number;
-  /** Whether this is the first item in the DataSource. */
-  first: boolean;
-  /** Whether this is the last item in the DataSource. */
-  last: boolean;
-  /** Whether the index is even. */
-  even: boolean;
-  /** Whether the index is odd. */
-  odd: boolean;
-};
-
-/** Helper to extract the offset of a DOM Node in a certain direction. */
-function getOffset(orientation: 'horizontal' | 'vertical', direction: 'start' | 'end', node: Node) {
-  const el = node as Element;
-  if (!el.getBoundingClientRect) {
-    return 0;
-  }
-  const rect = el.getBoundingClientRect();
-
-  if (orientation === 'horizontal') {
-    return direction === 'start' ? rect.left : rect.right;
-  }
-
-  return direction === 'start' ? rect.top : rect.bottom;
-}
+import { HTreeViewForOfContext } from '../models/h-virtual-for-of.model';
+import { getOffset } from '../utils/utils';
 
 
 /**
@@ -71,10 +37,9 @@ function getOffset(orientation: 'horizontal' | 'vertical', direction: 'start' | 
  */
 @Directive({
   selector: '[hVirtualFor][hVirtualForOf]',
-  providers: [{provide: _VIEW_REPEATER_STRATEGY, useClass: _RecycleViewRepeaterStrategy}],
+  providers: [{ provide: _VIEW_REPEATER_STRATEGY, useClass: _RecycleViewRepeaterStrategy }],
 })
-export class HVirtualFor<T extends HTreeViewItem<any>>
-{
+export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   /** Emits when the rendered view of the data changes. */
   readonly viewChange = new Subject<ListRange>();
 
@@ -83,22 +48,12 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
 
   /** The DataSource to display. */
   @Input('hVirtualForOf')
-  get hVirtualFor(): DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined {
-    return this._hVirtualFor;
-  }
-  set hVirtualFor(value: DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined) {
-    this._hVirtualFor = value;
-    if (isDataSource(value)) {
-      this._dataSourceChanges.next(value);
-    } else {
-      // If value is an an NgIterable, convert it to an array.
-      this._dataSourceChanges.next(
-        new ArrayDataSource<T>(isObservable(value) ? value : Array.from(value || [])),
-      );
-    }
+  set setHVirtualFor(value: T[] | null | undefined) {
+    this.hVirtualFor = value;
+    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.measureItemsSize(value))));
   }
 
-  _hVirtualFor: DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined;
+  hVirtualFor: T[] | null | undefined = [];
 
   /**
    * The `TrackByFunction` to use for tracking changes. The `TrackByFunction` takes the index and
@@ -118,17 +73,13 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
 
   /** The template used to stamp out new elements. */
   @Input()
-  set hVirtualForTemplate(value: TemplateRef<HVirtualForOfContext<T>>) {
+  set hVirtualForTemplate(value: TemplateRef<HTreeViewForOfContext<D, T>>) {
     if (value) {
       this._needsUpdate = true;
       this._template = value;
     }
   }
 
-  /**
-   * The size of the cache used to store templates that are not being used for re-use later.
-   * Setting the cache size to `0` will disable caching. Defaults to 20 templates.
-   */
   @Input()
   get hVirtualForTemplateCacheSize(): number {
     return this._viewRepeater.viewCacheSize;
@@ -139,13 +90,8 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
 
   /** Emits whenever the data in the current DataSource changes. */
   readonly dataStream: Observable<readonly T[]> = this._dataSourceChanges.pipe(
-    // Start off with null `DataSource`.
     startWith(null),
-    // Bundle up the previous and current data sources so we can work with both.
     pairwise(),
-    // Use `_changeDataSource` to disconnect from the previous data source and connect to the
-    // new one, passing back a stream of data changes which we run through `switchMap` to give
-    // us a data stream that emits the latest data from whatever the current `DataSource` is.
     switchMap(([prev, cur]) => this._changeDataSource(prev, cur)),
     // Replay the last emitted data when someone subscribes.
     shareReplay(1),
@@ -169,16 +115,11 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
   private readonly _destroyed = new Subject<void>();
 
   constructor(
-    /** The view container to add items to. */
     private _viewContainerRef: ViewContainerRef,
-    /** The template to use when stamping out new items. */
-    private _template: TemplateRef<HVirtualForOfContext<T>>,
-    /** The set of available differs. */
+    private _template: TemplateRef<HTreeViewForOfContext<D, T>>,
     private _differs: IterableDiffers,
-    /** The strategy used to render items in the virtual scroll viewport. */
     @Inject(_VIEW_REPEATER_STRATEGY)
-    private _viewRepeater: _RecycleViewRepeaterStrategy<T, T, HVirtualForOfContext<T>>,
-    /** The virtual scrolling viewport that these items are being rendered in. */
+    private _viewRepeater: _RecycleViewRepeaterStrategy<T, T, HTreeViewForOfContext<D, T>>,
     @SkipSelf() private _viewport: CdkVirtualScrollViewport,
     ngZone: NgZone,
   ) {
@@ -222,7 +163,7 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
     // Find the first node by starting from the beginning and going forwards.
     for (let i = 0; i < rangeLen; i++) {
       const view = this._viewContainerRef.get(i + renderedStartIndex) as EmbeddedViewRef<
-        HVirtualForOfContext<T>
+        HTreeViewForOfContext<D, T>
       > | null;
       if (view && view.rootNodes.length) {
         firstNode = lastNode = view.rootNodes[0];
@@ -233,7 +174,7 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
     // Find the last node by starting from the end and going backwards.
     for (let i = rangeLen - 1; i > -1; i--) {
       const view = this._viewContainerRef.get(i + renderedStartIndex) as EmbeddedViewRef<
-        HVirtualForOfContext<T>
+        HTreeViewForOfContext<D, T>
       > | null;
       if (view && view.rootNodes.length) {
         lastNode = view.rootNodes[view.rootNodes.length - 1];
@@ -253,7 +194,7 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
       // changing (need to do this diff).
       const changes = this._differ.diff(this._renderedItems);
       if (!changes) {
-        this._updateContext();
+        this.updateContextItem();
       } else {
         this._applyChanges(changes);
       }
@@ -273,22 +214,32 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
     this._viewRepeater.detach();
   }
 
+  abstract measureItemsSize(items: T[] | null | undefined): number;
+
+  abstract serializeNodes(
+    parent: T | undefined,
+    nodes: T[],
+    level: number,
+    visible: boolean,
+    serializedItems: T[],
+    renderedRange: ListRange
+  ): T[];
+
   /** React to scroll state changes in the viewport. */
-  count: number = 0;
+  // count: number = 0;
   private _onRenderedDataChange() {
     if (!this._renderedRange) {
       return;
     }
 
-
-    // this._renderedItems = this._nodes.slice(this._renderedRange.start, this._renderedRange.end);
-    this.count = 0;
     this._renderedItems = this.serializeNodes(
       undefined,
-      this._nodes as T[],
+      this.hVirtualFor as T[],
       0,
-      true
-    )
+      true,
+      [],
+      this._renderedRange
+    );
 
     if (!this._differ) {
       // Use a wrapper function for the `trackBy` so any new values are
@@ -298,46 +249,6 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
       });
     }
     this._needsUpdate = true;
-  }
-
-  private serializeNodes(
-    parent: T | undefined,
-    nodes: T[],
-    level: number,
-    visible: boolean,
-    serializedItems: T[] = [],
-  ): T[] {
-    serializedItems = serializedItems || [];
-    if (nodes && nodes.length) {
-      for (let i = 0; i < nodes.length; i++) {
-        let node = nodes[i];
-        node.parent = parent;
-        node.level = level;
-        node.visible = visible && (parent ? parent.expanded : true);
-
-        this.count++;
-        if(this._renderedRange.start <= this.count && this._renderedRange.end >= this.count) {
-          serializedItems.push(node);
-        }
-
-
-        if(this._renderedRange.end < this.count) {
-          return serializedItems;
-        }
-
-        if(node.visible && node.expanded) {
-          this.serializeNodes(
-            node,
-            node.children as T[],
-            level + 1,
-            node.visible,
-            serializedItems
-          );
-        }
-      }
-    }
-
-    return serializedItems;
   }
 
   /** Swap out one `DataSource` for another. */
@@ -353,36 +264,36 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
     return newDs ? newDs.connect(this) : observableOf();
   }
 
-  /** Update the `CdkVirtualForOfContext` for all views. */
-  private _updateContext() {
+  /** Update the context for all views. */
+  private updateContextItem() {
     const count = this._nodes.length;
     let i = this._viewContainerRef.length;
     while (i--) {
-      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<HVirtualForOfContext<T>>;
+      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<HTreeViewForOfContext<D, T>>;
       view.context.index = this._renderedRange.start + i;
       view.context.count = count;
-      this._updateComputedContextProperties(view.context);
       view.detectChanges();
     }
   }
 
   /** Apply changes to the DOM. */
   private _applyChanges(changes: IterableChanges<T>) {
+    const itemContextFactory = (
+      record: IterableChangeRecord<T>,
+      _adjustedPreviousIndex: number | null,
+      currentIndex: number | null,
+    ) => this.getEmbeddedViewArgs(record, currentIndex!);
     this._viewRepeater.applyChanges(
       changes,
       this._viewContainerRef,
-      (
-        record: IterableChangeRecord<T>,
-        _adjustedPreviousIndex: number | null,
-        currentIndex: number | null,
-      ) => this._getEmbeddedViewArgs(record, currentIndex!),
+      itemContextFactory,
       record => record.item,
     );
 
     // Update $implicit for any items that had an identity change.
     changes.forEachIdentityChange((record: IterableChangeRecord<T>) => {
       const view = this._viewContainerRef.get(record.currentIndex!) as EmbeddedViewRef<
-        HVirtualForOfContext<T>
+        HTreeViewForOfContext<D, T>
       >;
       view.context.$implicit = record.item;
     });
@@ -391,42 +302,23 @@ export class HVirtualFor<T extends HTreeViewItem<any>>
     const count = this._nodes.length;
     let i = this._viewContainerRef.length;
     while (i--) {
-      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<HVirtualForOfContext<T>>;
+      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<HTreeViewForOfContext<D, T>>;
       view.context.index = this._renderedRange.start + i;
       view.context.count = count;
-      this._updateComputedContextProperties(view.context);
     }
   }
 
-  /** Update the computed properties on the `CdkVirtualForOfContext`. */
-  private _updateComputedContextProperties(context: HVirtualForOfContext<any>) {
-    context.first = context.index === 0;
-    context.last = context.index === context.count - 1;
-    context.even = context.index % 2 === 0;
-    context.odd = !context.even;
-  }
-
-  private _getEmbeddedViewArgs(
+  private getEmbeddedViewArgs(
     record: IterableChangeRecord<T>,
     index: number,
-  ): _ViewRepeaterItemInsertArgs<HVirtualForOfContext<T>> {
-    // Note that it's important that we insert the item directly at the proper index,
-    // rather than inserting it and the moving it in place, because if there's a directive
-    // on the same node that injects the `ViewContainerRef`, Angular will insert another
-    // comment node which can throw off the move when it's being repeated for all items.
+  ): _ViewRepeaterItemInsertArgs<HTreeViewForOfContext<D, T>> {
     return {
       templateRef: this._template,
       context: {
         $implicit: record.item,
-        // It's guaranteed that the iterable is not "undefined" or "null" because we only
-        // generate views for elements if the "cdkVirtualForOf" iterable has elements.
-        hVirtualFor: this._hVirtualFor!,
+        hVirtualFor: new Array(1000),
         index: -1,
         count: -1,
-        first: false,
-        last: false,
-        odd: false,
-        even: false,
       },
       index,
     };
