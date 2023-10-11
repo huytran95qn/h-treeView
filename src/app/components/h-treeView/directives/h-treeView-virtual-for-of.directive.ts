@@ -20,64 +20,51 @@ import { HVirtualFor } from './h-virtual-for-of.directive';
 export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> extends HVirtualFor<D, T> {
   count: number = 0;
 
-  override measureItemsSize(items: T[]): number {
+  override getItemsLength(items: T[]): number {
     items = items || [];
-    return this.measureTreeSize(items, 0);
+    return this.measureTreeSize(items);
   }
 
   override serializeNodes(
-    parent: T | undefined,
     nodes: T[],
-    level: number,
-    visible: boolean,
+    renderedRange: ListRange,
     serializedItems: T[] = [],
-    renderedRange: ListRange
+    initialCount: number = 0
   ): T[] {
-    if(level === 0) {
-      this.count = 0;
-    }
     serializedItems = serializedItems || [];
+    initialCount = initialCount || 0;
     if (nodes && nodes.length) {
       for (let i = 0; i < nodes.length; i++) {
         let node = nodes[i];
-        node.parent = parent;
-        node.level = level;
-        node.visible = visible && (parent ? parent.expanded : true);
+        const parent = node.parent;
+        // node.visible = (parent?.visible || false) && (parent ? parent.expanded : true);
 
-        this.count++;
+        let temp = initialCount + node.totalChildren;
         if (renderedRange.start <= this.count && renderedRange.end >= this.count) {
           serializedItems.push(node);
         }
+
+        initialCount;  
 
 
         if (renderedRange.end < this.count) {
           return serializedItems;
         }
 
-        if (node.visible && node.expanded) {
-          this.serializeNodes(
-            node,
-            node.children as T[],
-            level + 1,
-            node.visible,
-            serializedItems,
-            renderedRange
-          );
-        }
+        this.serializeNodes(
+          node.children as T[],
+          renderedRange,
+          serializedItems,
+        );
       }
     }
 
     return serializedItems;
   }
-
-  private measureTreeSize(items: HTreeViewItem<D>[], total: number): number {
-    items.forEach(item => {
-      total++;
-      if(item.children.length > 0) {
-        total = this.measureTreeSize(item.children, total);
-      }
-    });
-
+  
+  private measureTreeSize(items: HTreeViewItem<D>[]): number {
+    let total: number = items.length;
+    items.forEach(item => total += item.totalChildren);
     return total;
   }
 }

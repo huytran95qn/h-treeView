@@ -28,7 +28,6 @@ export function toggleExpandOrCollapse<T>(node: HTreeViewItem<T>): void {
   node.expanded = !node.expanded;
 }
 
-/** Helper to extract the offset of a DOM Node in a certain direction. */
 export function getOffset(orientation: 'horizontal' | 'vertical', direction: 'start' | 'end', node: Node) {
   const el = node as Element;
   if (!el.getBoundingClientRect) {

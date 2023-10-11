@@ -20,6 +20,7 @@ export class HTreeViewSampleService {
         expanded: true
       });
       this.generateGrandFather(greatGrandFather);
+      greatGrandFather.setTotalChildren();
       greatGrandFathers.push(greatGrandFather);
     }
 
@@ -34,6 +35,7 @@ export class HTreeViewSampleService {
       });
       grandFather.parent = parent;
       this.generateFather(grandFather);
+      grandFather.setTotalChildren();
       grandFathers.push(grandFather);
     }
 

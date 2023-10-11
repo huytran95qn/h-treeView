@@ -18,6 +18,8 @@ interface IHTreeItem<T> {
   visible?: boolean;
 
   styleClass?: string;
+  
+  totalChildren?: number;
 }
 
 export class HTreeViewItem<T> implements IHTreeItem<T> {
@@ -29,7 +31,7 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
 
   children: HTreeViewItem<T>[] = [];
 
-  parent?: HTreeViewItem<T>;
+  parent: HTreeViewItem<T> | undefined = undefined;
 
   level: number = 1;
 
@@ -39,18 +41,23 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
 
   styleClass: string = '';
 
+  totalChildren: number = 0;
+
   constructor(data: IHTreeItem<T>) {
-    this.init(data);
+    if(data) {
+      this.uid = data.uid || v4();
+      this.label = data.label;
+      this.children = data.children || [];
+      this.parent = data.parent;
+      this.level = data.level || 1;
+      this.expanded = true;
+      this.styleClass = data.styleClass || '';
+      this.visible = true;
+    }
   }
 
-  private init(data: IHTreeItem<T>): void {
-    this.uid = data.uid || v4();
-    this.label = data.label;
-    this.children = data.children || [];
-    this.parent = data.parent;
-    this.level = data.level || 1;
-    this.expanded = true;
-    this.styleClass = data.styleClass || '';
-    this.visible = true;
+  public setTotalChildren(): void {
+    this.totalChildren = this.children.length;
+    this.children.forEach(child => this.totalChildren += child.totalChildren);
   }
 }

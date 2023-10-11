@@ -50,7 +50,7 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   @Input('hVirtualForOf')
   set setHVirtualFor(value: T[] | null | undefined) {
     this.hVirtualFor = value;
-    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.measureItemsSize(value))));
+    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(value))));
   }
 
   hVirtualFor: T[] | null | undefined = [];
@@ -214,15 +214,12 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
     this._viewRepeater.detach();
   }
 
-  abstract measureItemsSize(items: T[] | null | undefined): number;
+  abstract getItemsLength(items: T[] | null | undefined): number;
 
   abstract serializeNodes(
-    parent: T | undefined,
     nodes: T[],
-    level: number,
-    visible: boolean,
-    serializedItems: T[],
-    renderedRange: ListRange
+    renderedRange: ListRange,
+    serializedItems?: T[],
   ): T[];
 
   /** React to scroll state changes in the viewport. */
@@ -233,11 +230,7 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
     }
 
     this._renderedItems = this.serializeNodes(
-      undefined,
       this.hVirtualFor as T[],
-      0,
-      true,
-      [],
       this._renderedRange
     );
 
