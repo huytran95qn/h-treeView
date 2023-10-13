@@ -79,7 +79,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> extends HVirtual
         return serializedItems;
       }
 
-      if (node.visible && node.expanded) {
+      if (this.shouldIncludeItem(node)) {
         this._serializeNodes(node.children as T[], renderedRange, serializedItems);
       }
     }
