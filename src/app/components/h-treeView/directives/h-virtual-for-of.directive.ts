@@ -44,7 +44,7 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
   readonly viewChange = new Subject<ListRange>();
 
   /** Subject that emits when a new DataSource instance is given. */
-  private readonly dataSourceChanges = new Subject<DataSource<T>>();
+  public readonly dataSourceChanges = new Subject<DataSource<T>>();
 
   /** The DataSource to display. */
   @Input('hVirtualForOf')
@@ -214,23 +214,16 @@ export abstract class HVirtualFor<D, T> implements DoCheck, OnDestroy {
     this._viewRepeater.detach();
   }
 
-  initialCount: number = 0;
-
   abstract getItemsLength(items: T[] | null | undefined): number;
 
-  abstract serializeNodes(
-    nodes: T[],
-    renderedRange: ListRange,
-    serializedItems?: T[],
-  ): T[];
+  abstract serializeNodes(nodes: T[], renderedRange: ListRange): T[];
 
   /** React to scroll state changes in the viewport. */
-  public onRenderedDataChange() {
+  private onRenderedDataChange() {
     if (!this._renderedRange) {
       return;
     }
 
-    this.initialCount = 0;
     this._renderedItems = this.serializeNodes(
       this.hVirtualFor as T[],
       this._renderedRange

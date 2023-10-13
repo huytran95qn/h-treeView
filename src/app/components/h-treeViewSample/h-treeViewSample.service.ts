@@ -29,7 +29,7 @@ export class HTreeViewSampleService {
 
   private generateGrandFather(parent: HTreeViewItem<string>): void {
     let grandFathers: HTreeViewItem<string>[] = [];
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < 100; index++) {
       let grandFather = new HTreeViewItem<string>({
         label: `${parent.label} -- grandfather ${index + 1}`,
         level: parent.level + 1
@@ -44,7 +44,7 @@ export class HTreeViewSampleService {
 
   private generateFather(parent: HTreeViewItem<string>): void {
     let fathers: HTreeViewItem<string>[] = [];
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < 100; index++) {
       let father = new HTreeViewItem<string>({
         label: `${parent.label} -- father ${index + 1}`,
         level: parent.level + 1
