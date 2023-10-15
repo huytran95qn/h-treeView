@@ -7,7 +7,7 @@
 </cdk-virtual-scroll-viewport>
 
 <ng-template #hTreeItemTemplate let-item="item">
-  <li class="h-treeView-item"
+  <li class="h-treeView"
     [ngClass]="{
       'active': item.isSelected,
       'disabled': item.disabled
@@ -15,11 +15,11 @@
     [ngStyle]="{
       '--level': item.level - 1
     }">
-    <div class="h-treeView-item__toggler" (click)="toggle(item)">
+    <div class="h-treeView__toggler" (click)="toggle(item)">
       <ng-container *ngTemplateOutlet="toggleRef; context: { item: item }"></ng-container>
     </div>
 
-    <div class="h-treeView-item__item">
+    <div class="h-treeView__item">
       <ng-container *ngIf="itemTemplate">
         <ng-container *ngTemplateOutlet="itemTemplate; context: { item: item }"></ng-container>
       </ng-container>

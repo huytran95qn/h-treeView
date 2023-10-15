@@ -17,10 +17,9 @@ cdk-virtual-scroll-viewport {
   border-radius: 4px;
   overflow: hidden;
 
-  .h-treeView-item {
+  .h-treeView {
     color: rgba(0, 0, 0, 0.87);
     box-sizing: border-box;
-    cursor: pointer;
     background: white;
     font-size: 14px;
 
@@ -53,14 +52,17 @@ cdk-virtual-scroll-viewport {
   }
 }
 
-.h-treeView-item {
+.h-treeView {
   display: flex;
   align-items: center;
   height: 48px;
   border-radius: 6px;
   transition: box-shadow 0.2s;
   padding-left: calc(40px * var(--level));
-  cursor: pointer;
+
+  &__item {
+    cursor: pointer;
+  }
 
   &.active {
     outline: 0 none;
@@ -68,8 +70,16 @@ cdk-virtual-scroll-viewport {
     box-shadow: inset 0 0 0 0.15rem #BFDBFE;
   }
 
+  &.disabled {
+    .h-treeView__item {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
   &__toggler {
     display: flex;
+    cursor: pointer;
   }
 }
 

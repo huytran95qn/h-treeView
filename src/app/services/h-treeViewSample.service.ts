@@ -15,7 +15,8 @@ export class HTreeViewSampleService {
       let greatGrandFather = new HTreeViewItem<string>({
         label: `great-grandfather ${index + 1}`,
         expanded: true,
-        level: 1
+        level: 1,
+        disabled: true
       });
       this.generateGrandFather(greatGrandFather);
       greatGrandFathers.push(greatGrandFather);
