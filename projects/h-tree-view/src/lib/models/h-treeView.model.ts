@@ -20,6 +20,8 @@ interface IHTreeItem<T> {
   styleClass?: string;
 
   disabled?: boolean;
+
+  selected?: boolean;
 }
 
 export class HTreeViewItem<T> implements IHTreeItem<T> {
@@ -43,6 +45,8 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
 
   disabled?: boolean = false;
 
+  selected: boolean = false;
+
   constructor(data: IHTreeItem<T>) {
     if(data) {
       this.uid = data.uid || v4();
@@ -54,6 +58,7 @@ export class HTreeViewItem<T> implements IHTreeItem<T> {
       this.styleClass = data.styleClass || '';
       this.visible = data.visible || false;
       this.disabled = data.disabled || false;
+      this.selected = data.selected || false;
     }
   }
 }

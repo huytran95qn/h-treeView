@@ -9,7 +9,7 @@
 <ng-template #hTreeItemTemplate let-item="item">
   <li class="h-treeView"
     [ngClass]="{
-      'active': item.isSelected,
+      'active': item.selected,
       'disabled': item.disabled
     }"
     [ngStyle]="{
@@ -19,7 +19,7 @@
       <ng-container *ngTemplateOutlet="toggleRef; context: { item: item }"></ng-container>
     </div>
 
-    <div class="h-treeView__item">
+    <div class="h-treeView__item" (click)="clickNode(item)">
       <ng-container *ngIf="itemTemplate">
         <ng-container *ngTemplateOutlet="itemTemplate; context: { item: item }"></ng-container>
       </ng-container>

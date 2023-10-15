@@ -3,7 +3,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
+  EventEmitter,
   Input,
+  Output,
   QueryList,
   TemplateRef
 } from '@angular/core';
@@ -24,6 +26,8 @@ export class HTreeViewComponent<T> implements AfterContentInit {
   @Input('items') set setItems(items: HTreeViewItem<T>[]) {
     this.items = items || [];
   }
+
+  @Output() onClickNode: EventEmitter<HTreeViewItem<T>> = new EventEmitter();
 
   public items: HTreeViewItem<T>[] = [];
 
@@ -46,6 +50,12 @@ export class HTreeViewComponent<T> implements AfterContentInit {
   public toggle(item: HTreeViewItem<T>): void {
     if (item.children) {
       this._hTreeViewService.toggle(item);
+    }
+  }
+
+  public clickNode(item: HTreeViewItem<T>): void {
+    if(!item.disabled) {
+      this.onClickNode.emit(item);
     }
   }
 }
