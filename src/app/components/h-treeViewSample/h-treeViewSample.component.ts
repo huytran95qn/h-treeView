@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { HTreeViewItem } from '../h-treeView/models/h-treeView.model';
+import { HTreeViewItem } from '../../../../projects/h-tree-view/src/lib/models/h-treeView.model';
 import { HTreeViewSampleService } from './h-treeViewSample.service';
 
 @Component({

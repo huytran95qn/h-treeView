@@ -30,8 +30,7 @@ const COMMON_MODULES = [
     ...COMMON_MODULES,
   ],
   exports: [
-    HTreeViewComponent,
-    HTreeViewVirtualFor
+    HTreeViewComponent
   ],
   providers: [
     HTreeViewService
