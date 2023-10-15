@@ -5,18 +5,17 @@ import { HTreeViewItem } from '../../../projects/h-tree-view/src/lib/models/h-tr
   providedIn: 'root'
 })
 export class HTreeViewSampleService {
-  public getTreeNodesData(): HTreeViewItem<string>[] {
-    return this.generateGreatGrandFather();
+  public getTreeNodesData(length: number = 10): HTreeViewItem<string>[] {
+    return this.generateGreatGrandFather(length);
   }
 
-  private generateGreatGrandFather(): HTreeViewItem<string>[] {
+  private generateGreatGrandFather(length: number): HTreeViewItem<string>[] {
     let greatGrandFathers: HTreeViewItem<string>[] = [];
-    for (let index = 0; index < 100; index++) {
+    for (let index = 0; index < length; index++) {
       let greatGrandFather = new HTreeViewItem<string>({
         label: `great-grandfather ${index + 1}`,
         expanded: true,
-        level: 1,
-        disabled: true
+        level: 1
       });
       this.generateGrandFather(greatGrandFather);
       greatGrandFathers.push(greatGrandFather);

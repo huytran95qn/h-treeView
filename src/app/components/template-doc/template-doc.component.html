@@ -1,0 +1,13 @@
+<h-doc-section [title]="'Template'">
+  <ng-container description>
+    <p>Custom node content instead of a node label is defined with the hTreeViewTemplate property.</p>
+  </ng-container>
+
+  <ng-container demo>
+    <lib-h-treeView [items]="items">
+      <ng-template [hTreeViewTemplate]="templateEnum.Item" let-item="item">
+        <b>{{ item.label }}</b>
+      </ng-template>
+    </lib-h-treeView>
+  </ng-container>
+</h-doc-section>

@@ -10,7 +10,8 @@
     "paths": {
       "h-treeView": [
         "dist/h-tree-view"
-      ]
+      ],
+      "@angular/*": [ "./node_modules/@angular/*"]
     },
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,

@@ -5,7 +5,7 @@ import { HTreeViewTemplate } from '../enums/h-treeView.enum';
   selector: '[hTreeViewTemplate]'
 })
 export class HTreeViewTemplateDirective {
-  @Input('hTemplate') name: HTreeViewTemplate | undefined;
+  @Input('hTreeViewTemplate') name: HTreeViewTemplate | undefined;
 
   constructor(public template: TemplateRef<HTMLElement>) {}
 

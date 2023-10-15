@@ -225,6 +225,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> implements DoChe
       let childrenSize: number = 0;
 
       children.forEach(child => {
+        this.setNodeVisible(child);
         if (this.shouldIncludeItem(child)) {
           childrenSize += child.children.length + calcChildrenSize(child.children);
         }
@@ -255,6 +256,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> implements DoChe
       for (let i = 0; i < nodes.length; i++) {
         let node = nodes[i];
         count += 1;
+        this.setNodeVisible(node);
         const { parent } = node;
         node.visible = parent ? parent.visible && parent.expanded : true;
 
@@ -373,6 +375,11 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> implements DoChe
 
   private shouldIncludeItem(item: HTreeViewItem<D>): boolean {
     return item.expanded && item.visible;
+  }
+
+  private setNodeVisible(item: HTreeViewItem<D>) {
+    const { parent } = item;
+    item.visible = parent ? parent.visible && parent.expanded : true;
   }
 
   private treeViewSelector(): void {

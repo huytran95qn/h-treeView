@@ -1,12 +1,9 @@
-<div class="basic-doc">
-  <h2 class="basic-doc__title">Basic</h2>
+<h-doc-section [title]="'Basic'">
+  <ng-container description>
+    The most basic usage including select, disable and expand features.
+  </ng-container>
 
-  <div class="basic-doc__description">
-    <p>The most basic usage including select, disable and expand features.</p>
-    <p>We have support using virtual scroll.</p>
-  </div>
-
-  <div class="basic-doc__demo">
-    <lib-h-treeView style=" height: 200px; " [items]="items"></lib-h-treeView>
-  </div>
-</div>
+  <ng-container demo>
+    <lib-h-treeView [items]="items"></lib-h-treeView>
+  </ng-container>
+</h-doc-section>
