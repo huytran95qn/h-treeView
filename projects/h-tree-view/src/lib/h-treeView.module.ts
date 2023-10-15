@@ -6,10 +6,16 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { HTreeViewComponent } from './h-treeView.component';
 import { HTreeViewService } from './services/h-treeView.service';
 import { HTreeViewVirtualFor } from './directives/h-treeView-virtual-for-of.directive';
+import { HTreeViewTemplateDirective } from './directives/h-treeView-template.directive';
 
 const COMPONENTS = [
   HTreeViewComponent,
 ];
+
+const DIRECTIVES = [
+  HTreeViewTemplateDirective,
+  HTreeViewVirtualFor
+]
 
 const MATERIAL_MODULES = [
   MatIconModule,
@@ -23,14 +29,15 @@ const COMMON_MODULES = [
 @NgModule({
   declarations: [
     ...COMPONENTS,
-    HTreeViewVirtualFor
+    ...DIRECTIVES
   ],
   imports: [
     ...MATERIAL_MODULES,
     ...COMMON_MODULES,
   ],
   exports: [
-    HTreeViewComponent
+    HTreeViewComponent,
+    HTreeViewTemplateDirective
   ],
   providers: [
     HTreeViewService

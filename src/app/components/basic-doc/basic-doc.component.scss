@@ -1,0 +1,17 @@
+.basic-doc {
+  &__description {
+    padding-bottom: 1rem;
+  }
+
+  &__demo {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+
+    & > * {
+      border: 1px solid;
+      padding: 8px;
+    }
+  }
+}

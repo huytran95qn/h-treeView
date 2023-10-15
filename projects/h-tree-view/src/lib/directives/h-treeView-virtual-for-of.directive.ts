@@ -7,11 +7,35 @@ import {
   _ViewRepeaterItemInsertArgs,
 } from '@angular/cdk/collections';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-import { Directive, EmbeddedViewRef, Inject, Input, IterableChangeRecord, IterableChanges, IterableDiffer, IterableDiffers, NgZone, SkipSelf, TemplateRef, TrackByFunction, ViewContainerRef } from '@angular/core';
+import {
+  Directive,
+  DoCheck,
+  EmbeddedViewRef,
+  Inject,
+  Input,
+  IterableChangeRecord,
+  IterableChanges,
+  IterableDiffer,
+  IterableDiffers,
+  OnDestroy,
+  SkipSelf,
+  TemplateRef,
+  TrackByFunction,
+  ViewContainerRef
+} from '@angular/core';
 import { HTreeViewItem } from '../models/h-treeView.model';
 import { HTreeViewForOfContext } from '../models/h-virtual-for-of.model';
 import { HTreeViewService } from '../services/h-treeView.service';
-import { Observable, Subject, of, pairwise, shareReplay, startWith, switchMap, takeUntil } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  of,
+  pairwise,
+  shareReplay,
+  startWith,
+  switchMap,
+  takeUntil
+} from 'rxjs';
 import { getOffset } from '../utils/utils';
 import { NumberInput, coerceNumberProperty } from '@angular/cdk/coercion';
 
@@ -23,7 +47,7 @@ import { NumberInput, coerceNumberProperty } from '@angular/cdk/coercion';
   selector: '[hVirtualFor][hVirtualForOf]',
   providers: [{ provide: _VIEW_REPEATER_STRATEGY, useClass: _RecycleViewRepeaterStrategy }],
 })
-export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
+export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> implements DoCheck, OnDestroy {
   /** Emits when the rendered view of the data changes. */
   readonly viewChange = new Subject<ListRange>();
 
@@ -34,7 +58,8 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
   @Input('hVirtualForOf')
   set setHVirtualFor(value: T[] | null | undefined) {
     this.hVirtualFor = value;
-    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(value))));
+    this.hVirtualForLength = this.getItemsLength(value);
+    this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.hVirtualForLength)));
   }
 
   hVirtualFor: T[] | null | undefined = [];
@@ -96,6 +121,9 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
   /** Whether the rendered data should be updated during the next ngDoCheck cycle. */
   private _needsUpdate = false;
 
+  /**  */
+  private hVirtualForLength: number = 0;
+
   private readonly _destroyed = new Subject<void>();
 
   constructor(
@@ -105,25 +133,10 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
     @Inject(_VIEW_REPEATER_STRATEGY)
     private _viewRepeater: _RecycleViewRepeaterStrategy<T, T, HTreeViewForOfContext<D, T>>,
     @SkipSelf() private _viewport: CdkVirtualScrollViewport,
-    ngZone: NgZone,
     private _treeViewService: HTreeViewService<T>
   ) {
-    this.dataStream.subscribe(data => {
-      this._nodes = data;
-      this.onRenderedDataChange();
-    });
-    this._viewport.renderedRangeStream.pipe(takeUntil(this._destroyed)).subscribe(range => {
-      this._renderedRange = range;
-      if (this.viewChange.observers.length) {
-        ngZone.run(() => this.viewChange.next(this._renderedRange));
-      }
-      this.onRenderedDataChange();
-    });
-    this._viewport.attach(this);
-
-    this._treeViewService.treeViewSelector().subscribe(res => {
-      this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(this.hVirtualFor))));
-    })
+    this.initViewPort();
+    this.treeViewSelector()
   }
 
   /**
@@ -131,7 +144,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
    * in the specified range. Throws an error if the range includes items that are not currently
    * rendered.
    */
-  measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number {
+  public measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number {
     if (range.start >= range.end) {
       return 0;
     }
@@ -176,7 +189,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
       : 0;
   }
 
-  ngDoCheck() {
+  public ngDoCheck() {
     if (this._differ && this._needsUpdate) {
       // TODO(mmalerba): We should differentiate needs update due to scrolling and a new portion of
       // this list being rendered (can use simpler algorithm) vs needs update due to data actually
@@ -191,7 +204,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
     }
   }
 
-  ngOnDestroy() {
+  public ngOnDestroy() {
     this._viewport.detach();
 
     this._dataSourceChanges.next(undefined!);
@@ -203,18 +216,65 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
     this._viewRepeater.detach();
   }
 
-  getItemsLength(items: T[] | null | undefined): number {
+  /** Calculates the total length of the items, including their children. */
+  private getItemsLength(items: T[] | null | undefined): number {
     items = items || [];
-    return items.length + this.getChildrenSize(items);
+
+    /** Function to recursively calculate the size of children. */
+    const calcChildrenSize = (children: HTreeViewItem<D>[]): number => {
+      let childrenSize: number = 0;
+
+      children.forEach(child => {
+        if (this.shouldIncludeItem(child)) {
+          childrenSize += child.children.length + calcChildrenSize(child.children);
+        }
+      });
+
+      return childrenSize;
+    }
+
+    return items.length + calcChildrenSize(items);
   }
 
-  count: number = 0;
-  serializeNodes(
-    nodes: T[],
-    renderedRange: ListRange
-  ): T[] {
-    this.count = 0;
-    return this._serializeNodes(nodes, renderedRange, []);
+  /** Serializes the nodes based on the provided rendered range. */
+  private serializeNodes(nodes: T[], renderedRange: ListRange): T[] {
+    let count = 0;
+
+    /** Recursively generates serialized items from the nodes based on the rendered range. */
+    const generateItems = (
+      nodes: T[],
+      renderedRange: ListRange,
+      serializedItems: T[]
+    ): T[] => {
+      const difference = renderedRange.end - renderedRange.start;
+
+      if (!nodes || nodes.length === 0) {
+        return serializedItems;
+      }
+
+      for (let i = 0; i < nodes.length; i++) {
+        let node = nodes[i];
+        count += 1;
+        const { parent } = node;
+        node.visible = parent ? parent.visible && parent.expanded : true;
+
+        if (renderedRange.start <= count && renderedRange.end >= count) {
+          serializedItems.push(node);
+        }
+
+        if (difference === serializedItems.length) {
+          return serializedItems;
+        }
+
+        if (this.shouldIncludeItem(node)) {
+          generateItems(node.children as T[], renderedRange, serializedItems);
+        }
+      }
+
+      return serializedItems;
+    }
+
+    return generateItems(nodes, renderedRange, []);
   }
 
   /** React to scroll state changes in the viewport. */
@@ -303,7 +363,7 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
       templateRef: this._template,
       context: {
         $implicit: record.item,
-        hVirtualFor: new Array(1000),
+        hVirtualFor: Array(this.hVirtualForLength),
         index: -1,
         count: -1,
       },
@@ -311,52 +371,42 @@ export class HTreeViewVirtualFor<D, T extends HTreeViewItem<D>> {
     };
   }
 
-  private _serializeNodes(
-    nodes: T[],
-    renderedRange: ListRange,
-    serializedItems: T[]
-  ): T[] {
-    const difference = renderedRange.end - renderedRange.start;
-
-    if (!nodes || nodes.length === 0) {
-      return serializedItems;
-    }
-
-    for (let i = 0; i < nodes.length; i++) {
-      let node = nodes[i];
-      this.count += 1;
-      const { parent } = node;
-      node.visible = parent ? parent.visible && parent.expanded : true;
-
-      if (renderedRange.start <= this.count && renderedRange.end >= this.count) {
-        serializedItems.push(node);
-      }
-
-      if (difference === serializedItems.length) {
-        return serializedItems;
-      }
-
-      if (this.shouldIncludeItem(node)) {
-        this._serializeNodes(node.children as T[], renderedRange, serializedItems);
-      }
-    }
-
-    return serializedItems;
-  }
-
   private shouldIncludeItem(item: HTreeViewItem<D>): boolean {
     return item.expanded && item.visible;
   }
 
-  private getChildrenSize(children: HTreeViewItem<D>[]): number {
-    let childrenSize: number = 0;
+  private treeViewSelector(): void {
+    this._treeViewService.treeViewSelector().pipe(
+      takeUntil(this._destroyed)
+    ).subscribe(res => {
+      switch (res.state) {
+        case 'add':
 
-    children.forEach(child => {
-      if (this.shouldIncludeItem(child)) {
-        childrenSize += child.children.length + this.getChildrenSize(child.children);
+          break;
+
+        case 'update':
+          break;
+
+        case 'delete':
+          break;
+
+        case 'toogle':
+          this._dataSourceChanges.next(new ArrayDataSource<T>(Array(this.getItemsLength(this.hVirtualFor))));
+          break;
       }
     });
+  }
 
-    return childrenSize;
+  private initViewPort(): void {
+    this.dataStream.subscribe(data => {
+      this._nodes = data;
+      this.onRenderedDataChange();
+    });
+
+    this._viewport.renderedRangeStream.subscribe(range => {
+      this._renderedRange = range;
+      this.onRenderedDataChange();
+    });
+    this._viewport.attach(this);
   }
 }

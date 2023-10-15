@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HTreeViewSampleComponent } from './h-treeViewSample.component';
+import { BasicDocsComponent } from './basic-doc.component';
 
-describe('HTreeViewSampleComponent', () => {
-  let component: HTreeViewSampleComponent;
-  let fixture: ComponentFixture<HTreeViewSampleComponent>;
+describe('BasicDocsComponent', () => {
+  let component: BasicDocsComponent;
+  let fixture: ComponentFixture<BasicDocsComponent>;
 
   beforeEach((() => {
     TestBed.configureTestingModule({
-      declarations: [ HTreeViewSampleComponent ]
+      declarations: [ BasicDocsComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(HTreeViewSampleComponent);
+    fixture = TestBed.createComponent(BasicDocsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

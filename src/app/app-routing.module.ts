@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { HTreeViewSampleComponent } from './components/h-treeViewSample/h-treeViewSample.component';
+import { HDocsectionComponent } from './components/h-docsection/h-docsection.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: HTreeViewSampleComponent
+    component: HDocsectionComponent
   }
 ];
 

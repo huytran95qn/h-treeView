@@ -12,14 +12,12 @@ cdk-virtual-scroll-viewport {
 .h-treeView__droplist {
   width: 500px;
   max-width: 100%;
-  border: solid 1px #ccc;
   display: block;
   background: white;
   border-radius: 4px;
   overflow: hidden;
 
   .h-treeView-item {
-    border-bottom: solid 1px #ccc;
     color: rgba(0, 0, 0, 0.87);
     box-sizing: border-box;
     cursor: pointer;
