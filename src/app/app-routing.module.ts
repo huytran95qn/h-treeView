@@ -1,11 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { HDocsectionComponent } from './components/h-docsection/h-docsection.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: HDocsectionComponent
+    loadChildren: () => import('./pages/pages.module').then(m => m.PagesModule)
   }
 ];
 
