@@ -1,43 +1,54 @@
 <cdk-virtual-scroll-viewport itemSize="50">
-  <div class="h-treeView__droplist">
-    <ng-container *hVirtualFor="let item of items">
-      <ng-container *ngTemplateOutlet="hTreeItemTemplate; context: { item: item }"></ng-container>
-    </ng-container>
+  <div class="h-treeView__droplist"
+    cdkDropList
+    [cdkDropListSortingDisabled]="true"
+    (cdkDropListDropped)="drop($event)">
+    <div class="h-treeView__cdkDrag"
+      *hVirtualFor="let node of nodes"
+      cdkDrag
+      [cdkDragDisabled]="!draggable"
+      [cdkDragData]="node"
+      (cdkDragStarted)="handleDragStarted($event)"
+      (cdkDragMoved)="handleDragMove($event)"
+      [attr.data-id]="node.uid"
+      [attr.id]="'node-' + node.uid">
+      <ng-container *ngTemplateOutlet="hTreeItemTemplate; context: { node: node }"></ng-container>
+    </div>
   </div>
 </cdk-virtual-scroll-viewport>
 
-<ng-template #hTreeItemTemplate let-item="item">
+<ng-template #hTreeItemTemplate let-node="node">
   <li class="h-treeView"
     [ngClass]="{
-      'active': item.selected,
-      'disabled': item.disabled
+      'active': node.selected,
+      'disabled': node.disabled
     }"
     [ngStyle]="{
-      '--level': item.level - 1
+      '--level': node.level - 1
     }">
-    <div class="h-treeView__toggler" (click)="toggle(item)">
-      <ng-container *ngTemplateOutlet="toggleRef; context: { item: item }"></ng-container>
+    <div class="h-treeView__toggler" (click)="toggle(node)">
+      <ng-container *ngTemplateOutlet="toggleRef; context: { node: node }"></ng-container>
     </div>
 
-    <div class="h-treeView__item" (click)="clickNode(item)">
+    <div class="h-treeView__item" (click)="clickNode(node)">
       <ng-container *ngIf="itemTemplate">
-        <ng-container *ngTemplateOutlet="itemTemplate; context: { item: item }"></ng-container>
+        <ng-container *ngTemplateOutlet="itemTemplate; context: { node: node }"></ng-container>
       </ng-container>
 
       <ng-container *ngIf="!itemTemplate">
-        {{ item.label }}
+        {{ node.label }}
       </ng-container>
     </div>
   </li>
 </ng-template>
 
-<ng-template #toggleRef let-item="item">
-  <ng-container *ngIf="item?.children?.length">
-    <ng-container *ngIf="item.expanded">
+<ng-template #toggleRef let-node="node">
+  <ng-container *ngIf="node?.children?.length">
+    <ng-container *ngIf="node.expanded">
       <mat-icon aria-hidden="false" fontIcon="arrow_drop_down"></mat-icon>
     </ng-container>
 
-    <ng-container *ngIf="!item.expanded">
+    <ng-container *ngIf="!node.expanded">
       <mat-icon aria-hidden="false" fontIcon="arrow_right"></mat-icon>
     </ng-container>
   </ng-container>

@@ -13,6 +13,20 @@ export class HTreeViewService<T> {
     return this.$treeViewAction.asObservable();
   }
 
+  public collapse(node?: HTreeViewItem<T>): void {
+    if(node && node.expanded) {
+      node.expanded = false;
+      this.$treeViewAction.next({state: 'toogle', node });
+    }
+  }
+
+  public expanded(node?: HTreeViewItem<T>): void {
+    if(node && !node.expanded) {
+      node.expanded = true;
+      this.$treeViewAction.next({state: 'toogle', node });
+    }
+  }
+
   public toggle(node: HTreeViewItem<T>): void {
     node.expanded = !node.expanded;
     this.$treeViewAction.next({state: 'toogle', node });

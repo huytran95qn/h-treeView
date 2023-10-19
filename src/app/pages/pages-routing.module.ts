@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { BasicDocsComponent } from './basic-doc/basic-doc.component';
 import { TemplateDocComponent } from './template-doc/template-doc.component';
 import { PagesComponent } from './pages.component';
+import { DragDropDocComponent } from './drag-drop-doc/drag-drop-doc.component';
 
 const routes: Routes = [
   {
@@ -16,6 +17,10 @@ const routes: Routes = [
       {
         path: 'template',
         component: TemplateDocComponent
+      },
+      {
+        path: 'dragDrop',
+        component: DragDropDocComponent
       },
       {
         path: '**',

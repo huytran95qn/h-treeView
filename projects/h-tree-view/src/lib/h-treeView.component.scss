@@ -4,9 +4,25 @@
   overflow: auto;
 }
 
+.drop-inside {
+  border: 1px solid #00f;
+}
+
+.drop-before {
+  border-top: 1px solid #00f;
+}
+
+.drop-after {
+  border-bottom: 1px solid #00f;
+}
+
 cdk-virtual-scroll-viewport {
   height: 100%;
-  min-height: 200px;
+  min-height: 300px;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
 }
 
 .h-treeView__droplist {

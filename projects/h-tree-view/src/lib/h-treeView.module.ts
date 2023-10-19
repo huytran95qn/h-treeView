@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { HTreeViewComponent } from './h-treeView.component';
 import { HTreeViewService } from './services/h-treeView.service';
@@ -19,7 +20,8 @@ const DIRECTIVES = [
 
 const MATERIAL_MODULES = [
   MatIconModule,
-  ScrollingModule
+  ScrollingModule,
+  DragDropModule
 ];
 
 const COMMON_MODULES = [

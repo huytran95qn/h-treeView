@@ -17,31 +17,31 @@ export class HTreeViewSampleService {
         expanded: true,
         level: 1
       });
-      this.generateGrandFather(greatGrandFather);
+      this.generateGrandFather(greatGrandFather, length);
       greatGrandFathers.push(greatGrandFather);
     }
 
     return greatGrandFathers;
   }
 
-  private generateGrandFather(parent: HTreeViewItem<string>): void {
+  private generateGrandFather(parent: HTreeViewItem<string>, length: number): void {
     let grandFathers: HTreeViewItem<string>[] = [];
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < length; index++) {
       let grandFather = new HTreeViewItem<string>({
         label: `${parent.label} -- grandfather ${index + 1}`,
         level: parent.level + 1
       });
       grandFather.parent = parent;
-      this.generateFather(grandFather);
+      this.generateFather(grandFather, length);
       grandFathers.push(grandFather);
     }
 
     parent.children = grandFathers;
   }
 
-  private generateFather(parent: HTreeViewItem<string>): void {
+  private generateFather(parent: HTreeViewItem<string>, length: number): void {
     let fathers: HTreeViewItem<string>[] = [];
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < length; index++) {
       let father = new HTreeViewItem<string>({
         label: `${parent.label} -- father ${index + 1}`,
         level: parent.level + 1

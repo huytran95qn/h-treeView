@@ -31,7 +31,8 @@ export class PagesComponent implements OnDestroy {
   private initLinkDocs(): string[] {
     return [
       'basic',
-      'template'
+      'template',
+      'dragDrop'
     ]
   }
 }
